@@ -12,8 +12,8 @@ makes configuration much easier
 
 ## Getting started
 
-1. Clone this repository `git clone ...`
-2. Change into the `abc` directory
+1. Clone this repository `git clone https://github.com/ATIX-AG/orcharhino-vagrant`
+2. Change into the `orcharhino` directory
 3. modify the Vagrant file according your needs
    1. choose a base os (centos7 (default), oracle7 and rhel7 are supported)
    2. choose an installation method (full, default (default), webgui)
