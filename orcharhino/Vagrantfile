@@ -1,0 +1,201 @@
+#
+# LICENSE UPL 1.0
+#
+# Copyrigth (c) 2020, ATIX AG based on
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+#
+# Since: July, 2020
+# Author: hlawatchek@atix.de
+# Based on the work from 
+# Author: gerald.venzl@oracle.com
+# 
+# Description: Creates an orcharhino Vagrant virtual machine.
+# https://orcharhino.com
+# Optional plugins:
+#     vagrant-env (use .env files for configuration)
+#     vagrant-proxyconf (if you don't have direct access to the Internet)
+#         see https://github.com/tmatilai/vagrant-proxyconf for configuration
+#
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+#
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# orcharhino activation key
+#if ENV['OR_ACTIVATION_KEY']
+#  OR_ACTIVATION_KEY = ENV['OR_ACTIVATION_KEY']
+#else
+#  OR_ACTIVATION_KEY = "YOURE_ACTIVATION_KEY"
+#end
+
+# UI object for printing information
+ui = Vagrant::UI::Prefixed.new(Vagrant::UI::Colored.new, "vagrant")
+
+# Define constants
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Use vagrant-env plugin if available
+  if Vagrant.has_plugin?("vagrant-env")
+    config.env.load(".env.local", ".env") # enable the plugin
+  end
+
+  # orcharhino activation key
+  OR_ACTIVATION_KEY = default_s('OR_ACTIVATION_KEY', 'YOURE_ACTIVATION_KEY')
+
+  # orcharhino admin password
+  OR_ADMIN_PASSWORD = default_s('OR_ADMIN_PASSWORD', 'changeme')
+
+  # orcharhino admin email 
+  OR_ADMIN_EMAIL = default_s('OR_ADMIN_EMAIL', 'admin@example.com')
+
+  # orcharhino organization
+  OR_ORGANIZATION = default_s('OR_ORGANIZATION', 'DEMO')
+
+  # orcharhino location
+  OR_LOCATION = default_s('OR_LOCATION', 'DEMO')
+
+  # enable orcharhino's tftp feature
+  OR_ENABLE_TFTP = default_s('OR_ENABLE_TFTP', 'false')
+
+  # BASE operating system is one of centos7, oracle7 or rhel7
+  BASE_OS = default_s('BASE_OS',  'centos7')
+
+  # Installation method (full|default|webgui)
+  # - full: install a full blown orcharhino with all features enabled
+  # - default: install a default configuration based on base os selection
+  # - webgui: start the webgui installer for manual configuration
+  OR_INSTALLATION_METHOD = default_s('OR_INSTALLATION_METHOD', 'default')
+
+  # VM name
+  VM_NAME = default_s('VM_NAME', 'orcharhino-vagrant')
+
+  # Domain name
+  DOMAIN_NAME = default_s('DOMAIN_NAME', 'example.com')
+
+  # Memory for the VM (in MB, 2300 MB is ~2.25 GB)
+  VM_MEMORY = default_i('VM_MEMORY', 8192)
+
+  # VM time zone
+  # If not specified, will be set to match host time zone (if possible)
+  VM_SYSTEM_TIMEZONE = default_s('VM_SYSTEM_TIMEZONE', host_tz)
+
+  # installer version (don't change - development usage)
+  OR_INSTALLER_VERSION = default_s('OR_INSTALLER_VERSION', 'latest')
+
+  # Additional installer parameter
+  OR_INSTALLER_EXTRA_PARAMS = default_s('OR_INSTALLER_EXTRA_PARAMS', '')
+
+  # Debug
+  DEBUG = default_i('DEBUG', 0)
+end
+
+# Convenience methods
+def default_s(key, default)
+  ENV[key] && ! ENV[key].empty? ? ENV[key] : default
+end
+
+def default_i(key, default)
+  default_s(key, default).to_i
+end
+
+def host_tz
+  # get host time zone for setting VM time zone
+  # if host time zone isn't an integer hour offset from GMT, fall back to UTC
+  offset_sec = Time.now.gmt_offset
+  if (offset_sec % (60 * 60)) == 0
+    offset_hr = ((offset_sec / 60) / 60)
+    timezone_suffix = offset_hr >= 0 ? "-#{offset_hr.to_s}" : "+#{(-offset_hr).to_s}"
+    'Etc/GMT' + timezone_suffix
+  else
+    'UTC'
+  end
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "generic/#{BASE_OS}"
+  config.vm.define VM_NAME
+
+  # Provider-specific configuration
+  config.vm.provider "virtualbox" do |v|
+    v.memory = VM_MEMORY
+    v.name = VM_NAME
+  end
+  config.vm.provider :libvirt do |v|
+    v.memory = VM_MEMORY
+  end
+
+  config.vm.synced_folder ".", "/vagrant"
+
+  # add proxy configuration from host env - optional
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    config.proxy.enabled = { yum: false, }
+    ui.info "Getting Proxy Configuration from Host..."
+    has_proxy = false
+    ["http_proxy", "HTTP_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        ui.info "HTTP proxy: " + proxy
+        config.proxy.http = proxy
+        has_proxy = true
+        break
+      end
+    end
+
+    ["https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if proxy = ENV[proxy_var]
+        ui.info "HTTPS proxy: " + proxy
+        config.proxy.https = proxy
+        has_proxy = true
+        break
+      end
+    end
+
+    if has_proxy
+      # Only consider no_proxy if we have proxies defined.
+      no_proxy = ""
+      ["no_proxy", "NO_PROXY"].each do |proxy_var|
+        if ENV[proxy_var]
+          no_proxy = ENV[proxy_var]
+          ui.info "No proxy: " + no_proxy
+          no_proxy += ","
+          break
+        end
+      end
+      config.proxy.no_proxy = no_proxy + "localhost,127.0.0.1"
+    end
+  else
+    ["http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"].each do |proxy_var|
+      if ENV[proxy_var]
+        ui.warn 'To enable proxies in your VM, install the vagrant-proxyconf plugin'
+        break
+      end
+    end
+  end
+
+  # VM hostname
+  config.vm.hostname = "#{VM_NAME}.#{DOMAIN_NAME}"
+
+  # orcharhino port forwarding
+  # Web installer port
+  config.vm.network "forwarded_port", guest: 8015, host: 8015
+  config.vm.network "forwarded_port", guest: 443, host: 8443
+
+  # Provision everything on the first run
+  config.vm.provision "shell", path: "scripts/install.sh", env:
+    {
+       "SYSTEM_TIMEZONE"     => VM_SYSTEM_TIMEZONE,
+       "OR_ACTIVATION_KEY"   => OR_ACTIVATION_KEY,
+       "OR_INSTALLATION_METHOD" => OR_INSTALLATION_METHOD,
+       "OR_ADMIN_PASSWORD" => OR_ADMIN_PASSWORD,
+       "OR_ADMIN_EMAIL" => OR_ADMIN_EMAIL,
+       "OR_ORGANIZATION" => OR_ORGANIZATION,
+       "OR_LOCATION" => OR_LOCATION,
+       "OR_ENABLE_TFTP" => OR_ENABLE_TFTP,
+       "OR_INSTALLER_VERSION" => OR_INSTALLER_VERSION,
+       "OR_INSTALLER_EXTRA_PARAMS" => OR_INSTALLER_EXTRA_PARAMS,
+       "DEBUG" => DEBUG,
+    }
+
+end
