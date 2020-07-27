@@ -15,8 +15,8 @@
 set -e
 
 
-[[ $DEBUG -gt 0 ]] && echo DEBUG set to $DEBUG
-[[ $DEBUG -gt 1 ]] && set -x
+[[ $OR_DEBUG -gt 0 ]] && echo OR_DEBUG set to $OR_DEBUG
+[[ $OR_DEBUG -gt 1 ]] && set -x
 
 . /vagrant/scripts/functions.sh
 
@@ -25,7 +25,7 @@ declare -A proxy
 echo 'INSTALLER: Started up'
 echo 'Installation method:' $OR_INSTALLATION_METHOD
 
-[[ $DEBUG -gt 0 ]] && echo ENV && env
+[[ $OR_DEBUG -gt 0 ]] && echo ENV && env
 
 for f in /vagrant/userscripts/pre.d/*; do
   case "${f,,}" in
@@ -98,7 +98,7 @@ esac
 
 print_answers_yaml
 
-[ $DEBUG -gt 0] && echo /root/install_orcharhino.sh $cmd_proxy_options -a -y $OR_ACTIVATION_KEY $cmd_options
+[ $OR_DEBUG -gt 0 ] && echo /root/install_orcharhino.sh $cmd_proxy_options -a -y $OR_ACTIVATION_KEY $cmd_options
 
 /root/install_orcharhino.sh $cmd_proxy_options -a -y $OR_INSTALLER_EXTRA_PARAMS $OR_ACTIVATION_KEY $cmd_options
 

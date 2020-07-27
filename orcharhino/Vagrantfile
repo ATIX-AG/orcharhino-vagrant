@@ -89,7 +89,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   OR_INSTALLER_EXTRA_PARAMS = default_s('OR_INSTALLER_EXTRA_PARAMS', '')
 
   # Debug
-  DEBUG = default_i('DEBUG', 0)
+  OR_DEBUG = default_i('OR_DEBUG', 0)
 end
 
 # Convenience methods
@@ -195,7 +195,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
        "OR_ENABLE_TFTP" => OR_ENABLE_TFTP,
        "OR_INSTALLER_VERSION" => OR_INSTALLER_VERSION,
        "OR_INSTALLER_EXTRA_PARAMS" => OR_INSTALLER_EXTRA_PARAMS,
-       "DEBUG" => DEBUG,
+       "OR_DEBUG" => OR_DEBUG,
     }
 
 end

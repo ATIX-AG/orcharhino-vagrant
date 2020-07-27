@@ -101,7 +101,7 @@ EOL
   fi
   cat >>/etc/orcharhino-installer/answers.yaml <<EOL
 or_sec_int_net:
-  - 0.0.0.0
+  - "$(get_ip_net)"
 EOL
   if [ -z "${proxy['host']}" ]; then
     echo or_http_proxy_enabled: false >> /etc/orcharhino-installer/answers.yaml
@@ -256,5 +256,9 @@ function is_rhel {
     return 0
   fi
   return 1
+}
+
+function get_ip_net {
+  ip a | grep inet | grep -v 127.0.0.1 | head -1 | awk '{print $2}'
 }
 

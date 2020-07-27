@@ -51,7 +51,7 @@ fi
 DATE=$(date +%Y-%m-%d-%H-%M)
 mkdir -p ./logs
 
-env_param="OR_ACTIVATION_KEY=$activation_key OR_INSTALLER_VERSION=$scenario DEBUG=2"
+env_param="OR_ACTIVATION_KEY=$activation_key OR_INSTALLER_VERSION=$scenario OR_DEBUG=2"
 if [ -n "$proxy" ]; then
   env_param="$env_param HTTP_PROXY=$proxy HTTPS_PROXY=$proxy"
 fi
