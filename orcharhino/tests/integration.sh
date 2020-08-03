@@ -63,10 +63,10 @@ for os in centos7 oracle7 rhel7; do
   BASE_OS=$os vagrant destroy -f
   eval $env_param BASE_OS=$os vagrant up >> logs/integration-$os-$scenario-$useproxy-$DATE.log
   if [ ${PIPESTATUS[0]} -eq 0 ]; then
-    echo SUCCESS $os-$installer-$DATE | tee -a logs/results-$DATE.txt
+    echo SUCCESS $os-$installer-$DATE: logs/integration-$os-$scenario-$useproxy-$DATE.log | tee -a logs/results-$DATE.txt
   else 
     _ret=1
-    echo FAILED $os-$installer-$DATE | tee -a logs/results-$DATE.txt
+    echo FAILED $os-$installer-$DATE: logs/integration-$os-$scenario-$useproxy-$DATE.log | tee -a logs/results-$DATE.txt
   fi
 done
 exit $_ret
