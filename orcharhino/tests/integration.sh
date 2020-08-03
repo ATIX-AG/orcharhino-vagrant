@@ -56,13 +56,17 @@ if [ -n "$proxy" ]; then
   env_param="$env_param HTTP_PROXY=$proxy HTTPS_PROXY=$proxy"
 fi
 
+_ret=0
+echo writing results to log file logs/results-$DATE.txt
 for os in centos7 oracle7 rhel7; do
-  echo install $scenario on $os | tee -a logs/integration-$os-$scenario-$useproxy-$DATE.log
+  echo install $scenario on $os >> logs/integration-$os-$scenario-$useproxy-$DATE.log
   BASE_OS=$os vagrant destroy -f
-  eval $env_param BASE_OS=$os vagrant up | tee -a logs/integration-$os-$scenario-$useproxy-$DATE.log
+  eval $env_param BASE_OS=$os vagrant up >> logs/integration-$os-$scenario-$useproxy-$DATE.log
   if [ ${PIPESTATUS[0]} -eq 0 ]; then
     echo SUCCESS $os-$installer-$DATE | tee -a logs/results-$DATE.txt
   else 
+    _ret=1
     echo FAILED $os-$installer-$DATE | tee -a logs/results-$DATE.txt
   fi
 done
+exit $_ret
